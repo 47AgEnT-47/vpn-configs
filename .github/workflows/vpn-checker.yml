@@ -2,7 +2,7 @@ name: vpn-checker
 
 on:
   schedule:
-    - cron: '0 */2 * * *'
+    - cron: '3 */2 * * *'
   workflow_dispatch:
 jobs:
   prepare:
