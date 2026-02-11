@@ -1,0 +1,193 @@
+name: Xray-Knife Auto Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Prepare Proxy List
+        id: prepare
+        run: |
+          > temp.txt
+          while IFS= read -r url || [ -n "$url" ]; do
+            [[ $url == http* ]] && curl -sL "$url" >> temp.txt
+          done < urls.txt
+          
+          TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
+
+          #удаляем дубликаты
+          python3 -c "
+          import sys
+          seen = set()
+          unique_lines = []
+          total_count = 0
+          
+          try:
+              with open('temp.txt', 'r', encoding='utf-8') as f:
+                  lines = f.readlines()
+              
+              total_count = len(lines)
+              for line in lines:
+                  clean_line = line.strip()
+                  if not clean_line: continue
+                  
+                  # Сравниваем только часть до #
+                  body = clean_line.split('#')[0]
+                  if body not in seen:
+                      seen.add(body)
+                      unique_lines.append(clean_line)
+              
+              with open('temp.txt', 'w', encoding='utf-8') as f:
+                  f.write('\n'.join(unique_lines))
+              
+              removed = total_count - len(unique_lines)
+              percent = (removed / total_count * 100) if total_count > 0 else 0
+              
+              print('='*30)
+              print(f'📊 СТАТИСТИКА ОЧИСТКИ:')
+              print(f'✅ Было загружено: {total_count}')
+              print(f'✂️ Удалено дублей: {removed} ({percent:.1f}%)')
+              print(f'💎 Уникальных на выходе: {len(unique_lines)}')
+              print('='*30)
+          except Exception as e:
+              print(f'❌ Ошибка: {e}')
+              sys.exit(1)
+          "
+
+          
+          MIN_LINES=1000
+          MAX_FILES=90
+          
+          if [ $TOTAL_LINES -le 1 ]; then
+            echo "parts=aa" >> $GITHUB_OUTPUT
+            cp temp.txt file_aa.txt
+          else
+            NUM_FILES=$(( (TOTAL_LINES + MIN_LINES - 1) / MIN_LINES ))
+            [[ $NUM_FILES -gt $MAX_FILES ]] && NUM_FILES=$MAX_FILES
+            
+            LINES_PER_FILE=$(( (TOTAL_LINES + NUM_FILES - 1) / NUM_FILES ))
+            
+            # Используем стандартный split с двухбуквенными суффиксами
+            split -l $LINES_PER_FILE --additional-suffix=.txt temp.txt file_
+            
+            parts=()
+            for f in file_*.txt; do
+              # Убираем 'file_' и '.txt'
+              p="${f#file_}"
+              p="${p%.txt}"
+              parts+=("$p")
+            done
+            
+            # Формируем простой список через запятую
+            echo "parts=$(IFS=,; echo "${parts[*]}")" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set Matrix
+        id: set-matrix
+        run: |
+          # Создаем матрицу
+          IFS=',' read -ra PARTS <<< "${{ steps.prepare.outputs.parts }}"
+          MATRIX='{"part":['
+          for i in "${!PARTS[@]}"; do
+            if [ $i -gt 0 ]; then
+              MATRIX+=","
+            fi
+            MATRIX+="\"${PARTS[$i]}\""
+          done
+          MATRIX+=']}'
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+      - name: Upload Parts
+        uses: actions/upload-artifact@v4
+        with:
+          name: proxy-parts
+          path: file_*.txt
+          retention-days: 1
+
+  check-proxies:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        part: ${{ fromJson(needs.prepare.outputs.matrix).part }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Part
+        uses: actions/download-artifact@v4
+        with:
+          name: proxy-parts
+          path: .
+
+      - name: Download and Prepare xray-knife
+        run: |
+          curl -L "https://github.com/lilendian0x00/xray-knife/releases/download/v8.0.0/Xray-knife-linux-64.zip" -o xray-knife.zip
+          unzip -o xray-knife.zip xray-knife
+          chmod +x xray-knife
+
+      - name: Run check
+        run: |
+          FILE="file_${{ matrix.part }}.txt"
+          OUT="vless_${{ matrix.part }}.txt"
+          
+          echo "Working on $FILE"
+          
+          if [ -f "$FILE" ]; then
+            ./xray-knife http -f "$FILE" -o "$OUT" -u https://google.com/generate_204 -z xray -e -d 5000 -t 300 < /dev/null || true
+          else
+            echo "Error: $FILE not found!"
+          fi
+          
+          [ ! -f "$OUT" ] && touch "$OUT"
+          echo "Resulting lines in $OUT: $(wc -l < $OUT)"
+
+      - name: Upload Result
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ matrix.part }}
+          path: "vless_*.txt"
+          retention-days: 1
+
+  merge-and-push:
+    needs: check-proxies
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: results-*
+          merge-multiple: true
+
+      - name: Merge Results
+        run: |
+          grep -h -v '^$' vless_*.txt > vless.txt 2>/dev/null || touch vless.txt
+          echo "Final count: $(wc -l < vless.txt)"
+
+      - name: Push to Repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add vless.txt
+          if ! git diff --staged --quiet; then
+            git commit -m "Update proxies: $(date +'%Y-%m-%d %H:%M')"
+            git pull --rebase origin main || git pull --rebase origin master
+            git push origin HEAD
+          fi
