@@ -19,7 +19,7 @@ jobs:
             [[ $url == http* ]] && curl -sL "$url" >> temp.txt
           done < urls.txt
           
-          TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
+          
 
           #удаляем дубликаты
           python3 -c "
@@ -59,7 +59,8 @@ jobs:
               print(f'❌ Ошибка: {e}')
               sys.exit(1)
           "
-
+          
+          TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
           
           MIN_LINES=1000
           MAX_FILES=90
