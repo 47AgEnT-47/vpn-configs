@@ -63,7 +63,7 @@ jobs:
           TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
           
           MIN_LINES=1000
-          MAX_FILES=90
+          MAX_FILES=20
           
           if [ $TOTAL_LINES -le 1 ]; then
             echo "parts=aa" >> $GITHUB_OUTPUT
