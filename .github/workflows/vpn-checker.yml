@@ -1,4 +1,4 @@
-name: Xray-Knife Auto Check
+name: vpn-checker
 
 on:
   workflow_dispatch:
