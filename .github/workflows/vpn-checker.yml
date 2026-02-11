@@ -1,9 +1,8 @@
 name: vpn-checker
-
 on:
-  schedule:
-    - cron: '3 */2 * * *'
-  workflow_dispatch:
+  repository_dispatch:
+    types: [vpn-checker]
+  workflow_dispatch:           
 jobs:
   prepare:
     runs-on: ubuntu-latest
