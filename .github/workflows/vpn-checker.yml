@@ -24,42 +24,42 @@ jobs:
             fi
 
             python3 -c "
-import sys
-protocols = ('vless://', 'vmess://', 'trojan://', 'hysteria', 'hysteria2', 'tuic')
-url = sys.argv[1]
-try:
-    with open('seen_bodies.txt', 'r') as f:
-        seen = set(line.strip() for line in f)
-    with open('current_source.txt', 'r', encoding='utf-8') as f:
-        lines = f.readlines()
-    total_in_url = len(lines)
-    added_from_url = 0
-    with open('temp.txt', 'a', encoding='utf-8') as out, open('seen_bodies.txt', 'a', encoding='utf-8') as seen_file:
-        for line in lines:
-            clean_line = line.strip()
-            if not clean_line or not clean_line.lower().startswith(protocols):
-                continue
-            if '#' in clean_line:
-                body, remarks = clean_line.split('#', 1)
-            else:
-                body, remarks = clean_line, None
-            body_clean = ''.join(body.split())
-            if body_clean not in seen:
-                seen.add(body_clean)
-                seen_file.write(body_clean + '\n')
-                final_line = f'{body_clean}#{remarks}' if remarks else body_clean
-                out.write(final_line + '\n')
-                added_from_url += 1
-    print(f'🔗 {url} | Найдено: {total_in_url} | Добавлено уникальных: {added_from_url}')
-except Exception as e:
-    print(f'❌ Ошибка {url}: {e}')
-            " "$url"
-          done < urls.txt
+            import sys
+            protocols = ('vless://', 'vmess://', 'trojan://', 'hysteria', 'hysteria2', 'tuic')
+            url = sys.argv[1]
+            try:
+                with open('seen_bodies.txt', 'r') as f:
+                    seen = set(line.strip() for line in f)
+                with open('current_source.txt', 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                total_in_url = len(lines)
+                added_from_url = 0
+                with open('temp.txt', 'a', encoding='utf-8') as out, open('seen_bodies.txt', 'a', encoding='utf-8') as seen_file:
+                  for line in lines:
+                      clean_line = line.strip()
+                      if not clean_line or not clean_line.lower().startswith(protocols):
+                          continue
+                      if '#' in clean_line:
+                           body, remarks = clean_line.split('#', 1)
+                      else:
+                           body, remarks = clean_line, None
+                      body_clean = ''.join(body.split())
+                      if body_clean not in seen:
+                          seen.add(body_clean)
+                          seen_file.write(body_clean + '\n')
+                          final_line = f'{body_clean}#{remarks}' if remarks else body_clean
+                          out.write(final_line + '\n')
+                          added_from_url += 1
+                print(f'🔗 {url} | Найдено: {total_in_url} | Добавлено уникальных: {added_from_url}')
+            except Exception as e:
+                print(f'❌ Ошибка {url}: {e}')
+                        " "$url"
+                      done < urls.txt
 
-          TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
-          echo "Итоговое количество: $TOTAL_LINES"
+                      TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
+                      echo "Итоговое количество: $TOTAL_LINES"
 
-          # Далее твой код разделения split...
+                      # Далее твой код разделения split...
 
       
 
