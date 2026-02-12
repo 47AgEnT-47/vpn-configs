@@ -16,7 +16,7 @@ jobs:
         run: |
           > temp.txt
           while IFS= read -r url || [ -n "$url" ]; do
-            [[ $url == http* ]] && curl -sfL "$url" >> temp.txt
+            [[ $url == http* ]] && curl -sL "$url" >> temp.txt
           done < urls.txt
           
           
