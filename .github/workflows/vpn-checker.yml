@@ -38,7 +38,7 @@ jobs:
                   clean_line = line.strip()
                   if not clean_line: continue
 
-                  protocols = ('vless://', 'vmess://', 'trojan://', 'hysteria', 'hysteria2', 'tuic'
+                  protocols = ('vless://', 'vmess://', 'trojan://', 'hysteria', 'hysteria2', 'tuic')
                   if not clean_line.lower().startswith(protocols):
                       continue
                       
