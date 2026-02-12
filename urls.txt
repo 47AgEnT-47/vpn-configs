@@ -4,8 +4,6 @@ https://raw.githubusercontent.com/sevcator/5ubscrpt10n/refs/heads/main/protocols
 
 https://raw.githubusercontent.com/miladtahanian/V2RayCFGDumper/refs/heads/main/config.txt
 
-https://raw.githubusercontent.com/miladtahanian/Config-Collector/refs/heads/main/vless_iran.txt
-
 https://raw.githubusercontent.com/CidVpn/cid-vpn-config/refs/heads/main/general.txt
 
 https://raw.githubusercontent.com/roosterkid/openproxylist/refs/heads/main/V2RAY_BASE64.txt
@@ -37,8 +35,6 @@ https://raw.githubusercontent.com/V2RayRoot/V2RayConfig/refs/heads/main/Config/v
 https://github.com/AvenCores/goida-vpn-configs/raw/refs/heads/main/githubmirror/26.txt
 
 https://raw.githubusercontent.com/yitong2333/proxy-minging/refs/heads/main/v2ray.txt
-
-https://raw.githubusercontent.com/youfoundamin/V2rayCollector/refs/heads/main/vless_iran.txt
 
 https://raw.githubusercontent.com/Argh94/Proxy-List/refs/heads/main/All_Config.txt
 
