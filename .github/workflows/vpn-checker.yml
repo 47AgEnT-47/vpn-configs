@@ -16,7 +16,7 @@ jobs:
         run: |
           > temp.txt
           while IFS= read -r url || [ -n "$url" ]; do
-            [[ $url == http* ]] && curl -sL "$url" >> temp.txt
+            [[ $url == http* ]] && curl -sfL "$url" >> temp.txt
           done < urls.txt
           
           
@@ -34,7 +34,11 @@ jobs:
               for line in lines:
                   clean_line = line.strip()
                   if not clean_line: continue
-                  
+
+                  protocols = ('vless://', 'vmess://', 'trojan://', 'ss://', 'ssr://', 'hysteria', 'tuic')
+                  if not clean_line.lower().startswith(protocols):
+                      continue
+                      
                   # Разделяем на ТЕЛО и ИМЯ (remarks)
                   if '#' in clean_line:
                       body, remarks = clean_line.split('#', 1)
