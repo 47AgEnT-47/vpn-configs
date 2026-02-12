@@ -2,8 +2,6 @@ https://raw.githubusercontent.com/sakha1370/OpenRay/refs/heads/main/output/all_v
 
 https://raw.githubusercontent.com/sevcator/5ubscrpt10n/refs/heads/main/protocols/vl.txt
 
-https://raw.githubusercontent.com/yitong2333/proxy-minging/refs/heads/main/v2ray.txt
-
 https://raw.githubusercontent.com/miladtahanian/V2RayCFGDumper/refs/heads/main/config.txt
 
 https://raw.githubusercontent.com/miladtahanian/Config-Collector/refs/heads/main/vless_iran.txt
