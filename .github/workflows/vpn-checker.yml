@@ -15,58 +15,66 @@ jobs:
         id: prepare
         run: |
           > temp.txt
+          # Создаем пустой файл для хранения уже найденных уникальных тел (база дубликатов)
+          > seen_bodies.txt
+
           while IFS= read -r url || [ -n "$url" ]; do 
             [[ $url == http* ]] || continue
   
-            if ! curl -sL --max-time 30 "$url" >> temp.txt; then
-              echo "❌ **Ошибка загрузки:** $url" >> $GITHUB_STEP_SUMMARY
+            if ! curl -sL --max-time 30 "$url" > current_source.txt; then
+              echo "❌ Ошибка загрузки: $url"
+              continue
             fi
+
+            # Обработка конкретной ссылки с учетом глобальных дубликатов
+            python3 -c "
+            import sys
+            protocols = ('vless://', 'vmess://', 'trojan://', 'hysteria', 'hysteria2', 'tuic')
+            
+            try:
+                # Загружаем глобальную базу дубликатов (тела ссылок)
+                with open('seen_bodies.txt', 'r') as f:
+                    seen = set(line.strip() for line in f)
+                
+                with open('current_source.txt', 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                
+                total_in_url = len(lines)
+                added_from_url = 0
+                
+                with open('temp.txt', 'a', encoding='utf-8') as out, open('seen_bodies.txt', 'a', encoding='utf-8') as seen_file:
+                    for line in lines:
+                        clean_line = line.strip()
+                        if not clean_line or not clean_line.lower().startswith(protocols):
+                            continue
+                        
+                        # Твоя логика разделения на тело и имя
+                        if '#' in clean_line:
+                            body, remarks = clean_line.split('#', 1)
+                        else:
+                            body, remarks = clean_line, None
+                        
+                        body_clean = ''.join(body.split())
+                        
+                        # Проверка: есть ли это тело уже в общем списке (из этой или прошлых ссылок)
+                        if body_clean not in seen:
+                            seen.add(body_clean)
+                            seen_file.write(body_clean + '\n')
+                            final_line = f'{body_clean}#{remarks}' if remarks else body_clean
+                            out.write(final_line + '\n')
+                            added_from_url += 1
+                
+                print(f'🔗 Ссылка: {sys.argv[1]}')
+                print(f'   Найдено: {total_in_url} | Добавлено уникальных: {added_from_url}')
+            except Exception as e:
+                print(f'❌ Ошибка при обработке {sys.argv[1]}: {e}')
+            " "$url"
           done < urls.txt
- 
-          python3 -c "
-          import sys
-          seen = set()
-          unique_lines = []
-          total_count = 0
-          
-          try:
-              with open('temp.txt', 'r', encoding='utf-8') as f:
-                  lines = f.readlines()
-              
-              total_count = len(lines)
-              for line in lines:
-                  clean_line = line.strip()
-                  if not clean_line: continue
 
-                  protocols = ('vless://', 'vmess://', 'trojan://', 'hysteria', 'hysteria2', 'tuic')
-                  if not clean_line.lower().startswith(protocols):
-                      continue
-                      
-                  # Разделяем на ТЕЛО и ИМЯ (remarks)
-                  if '#' in clean_line:
-                      body, remarks = clean_line.split('#', 1)
-                  else:
-                      body, remarks = clean_line, None
-                  
-                  # КРИТИЧЕСКИЙ МОМЕНТ: Удаляем все пробелы, табы и невидимые символы из ТЕЛА ссылки
-                  body = ''.join(body.split())
-                  
-                  if body not in seen:
-                      seen.add(body)
-                      # Собираем обратно: чистое тело + оригинальное имя (если есть)
-                      final_line = f'{body}#{remarks}' if remarks else body
-                      unique_lines.append(final_line)
-              
-              with open('temp.txt', 'w', encoding='utf-8') as f:
-                  f.write('\n'.join(unique_lines))
-              
-              print(f'📊 СТАТИСТИКА: Было {total_count}, Стало {len(unique_lines)}')
-          except Exception as e:
-              print(f'❌ Ошибка: {e}')
-              sys.exit(1)
-          "
-
+          # Далее твой код без изменений (разбивка на части и т.д.)
           TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
+          echo "Финальное количество во всех файлах: $TOTAL_LINES"
+
           MIN_LINES=1000
           MAX_FILES=10
 
