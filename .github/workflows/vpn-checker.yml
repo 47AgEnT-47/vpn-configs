@@ -83,25 +83,18 @@ jobs:
           
           MIN_LINES=1000
           MAX_FILES=10
-
-          # Удаляем старые файлы, чтобы не смешались
           rm -f file_*.txt
 
           if [ "$TOTAL_LINES" -le "$MIN_LINES" ]; then
-            # Если строк мало — одна часть
             cp temp.txt file_aa.txt
             echo "parts=aa" >> $GITHUB_OUTPUT
           else
-            # Считаем, на сколько частей бить (не более 10)
             NUM_FILES=$(( (TOTAL_LINES + MIN_LINES - 1) / MIN_LINES ))
             if [ "$NUM_FILES" -gt "$MAX_FILES" ]; then NUM_FILES="$MAX_FILES"; fi
-    
-  
             split -n "l/$NUM_FILES" --additional-suffix=.txt temp.txt file_
     
             parts=()
             for f in file_*.txt; do
-              # Проверяем, что файл не пустой (на всякий случай)
               if [ -s "$f" ]; then
                 p="${f#file_}"
                 p="${p%.txt}"
@@ -110,7 +103,6 @@ jobs:
             done
             echo "parts=$(IFS=,; echo "${parts[*]}")" >> $GITHUB_OUTPUT
           fi
-
 
           
       - name: Set Matrix
