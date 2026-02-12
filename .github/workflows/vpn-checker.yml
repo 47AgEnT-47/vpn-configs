@@ -15,11 +15,14 @@ jobs:
         id: prepare
         run: |
           > temp.txt
-          while IFS= read -r url || [ -n "$url" ]; do
-            [[ $url == http* ]] && curl -sL "$url" >> temp.txt
+          while IFS= read -r url || [ -n "$url" ]; do 
+            [[ $url == http* ]] || continue
+  
+            if ! curl -sL --max-time 30 "$url" >> temp.txt; then
+              echo "❌ **Ошибка загрузки:** $url" >> $GITHUB_STEP_SUMMARY
+            fi
           done < urls.txt
-          
-          
+ 
           python3 -c "
           import sys
           seen = set()
