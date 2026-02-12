@@ -66,36 +66,40 @@ jobs:
               sys.exit(1)
           "
 
-          
           TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
-          
           MIN_LINES=1000
           MAX_FILES=10
-          
-          if [ $TOTAL_LINES -le 1 ]; then
-            echo "parts=aa" >> $GITHUB_OUTPUT
+
+          # Удаляем старые файлы, чтобы не смешались
+          rm -f file_*.txt
+
+          if [ "$TOTAL_LINES" -le "$MIN_LINES" ]; then
+            # Если строк мало — одна часть
             cp temp.txt file_aa.txt
+            echo "parts=aa" >> $GITHUB_OUTPUT
           else
+            # Считаем, на сколько частей бить (не более 10)
             NUM_FILES=$(( (TOTAL_LINES + MIN_LINES - 1) / MIN_LINES ))
-            [[ $NUM_FILES -gt $MAX_FILES ]] && NUM_FILES=$MAX_FILES
-            
-            LINES_PER_FILE=$(( (TOTAL_LINES + NUM_FILES - 1) / NUM_FILES ))
-            
-            # Используем стандартный split с двухбуквенными суффиксами
-            split -l $LINES_PER_FILE --additional-suffix=.txt temp.txt file_
-            
+            if [ "$NUM_FILES" -gt "$MAX_FILES" ]; then NUM_FILES="$MAX_FILES"; fi
+    
+            # КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: 
+            # split -n l/10 разбивает ровно на 10 частей по строкам без остатка
+            split -n "l/$NUM_FILES" --additional-suffix=.txt temp.txt file_
+    
             parts=()
             for f in file_*.txt; do
-              # Убираем 'file_' и '.txt'
-              p="${f#file_}"
-              p="${p%.txt}"
-              parts+=("$p")
+              # Проверяем, что файл не пустой (на всякий случай)
+              if [ -s "$f" ]; then
+                p="${f#file_}"
+                p="${p%.txt}"
+                parts+=("$p")
+              fi
             done
-            
-            # Формируем простой список через запятую
             echo "parts=$(IFS=,; echo "${parts[*]}")" >> $GITHUB_OUTPUT
           fi
 
+
+          
       - name: Set Matrix
         id: set-matrix
         run: |
