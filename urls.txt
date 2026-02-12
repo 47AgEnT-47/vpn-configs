@@ -67,3 +67,10 @@ https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror
 https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/5.txt
 
 https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/9.txt
+
+https://raw.githubusercontent.com/55prosek-lgtm/vpn_config_for_russia/refs/heads/main/whitelist.txt
+
+https://raw.githubusercontent.com/R3ZARAHIMI/tg-v2ray-configs-every2h/refs/heads/main/Original-Configs.txt
+
+https://raw.githubusercontent.com/SoroushImanian/BlackKnight/refs/heads/main/sub/vless
+
