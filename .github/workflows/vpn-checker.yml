@@ -20,8 +20,6 @@ jobs:
           done < urls.txt
           
           
-
-          #удаляем дубликаты
           python3 -c "
           import sys
           seen = set()
@@ -37,28 +35,30 @@ jobs:
                   clean_line = line.strip()
                   if not clean_line: continue
                   
-                  # Сравниваем только часть до #
-                  body = clean_line.split('#')[0]
+                  # Разделяем на ТЕЛО и ИМЯ (remarks)
+                  if '#' in clean_line:
+                      body, remarks = clean_line.split('#', 1)
+                  else:
+                      body, remarks = clean_line, None
+                  
+                  # КРИТИЧЕСКИЙ МОМЕНТ: Удаляем все пробелы, табы и невидимые символы из ТЕЛА ссылки
+                  body = ''.join(body.split())
+                  
                   if body not in seen:
                       seen.add(body)
-                      unique_lines.append(clean_line)
+                      # Собираем обратно: чистое тело + оригинальное имя (если есть)
+                      final_line = f'{body}#{remarks}' if remarks else body
+                      unique_lines.append(final_line)
               
               with open('temp.txt', 'w', encoding='utf-8') as f:
                   f.write('\n'.join(unique_lines))
               
-              removed = total_count - len(unique_lines)
-              percent = (removed / total_count * 100) if total_count > 0 else 0
-              
-              print('='*30)
-              print(f'📊 СТАТИСТИКА ОЧИСТКИ:')
-              print(f'✅ Было загружено: {total_count}')
-              print(f'✂️ Удалено дублей: {removed} ({percent:.1f}%)')
-              print(f'💎 Уникальных на выходе: {len(unique_lines)}')
-              print('='*30)
+              print(f'📊 СТАТИСТИКА: Было {total_count}, Стало {len(unique_lines)}')
           except Exception as e:
               print(f'❌ Ошибка: {e}')
               sys.exit(1)
           "
+
           
           TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
           
