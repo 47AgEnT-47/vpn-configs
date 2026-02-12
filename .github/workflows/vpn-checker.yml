@@ -38,7 +38,7 @@ jobs:
                   clean_line = line.strip()
                   if not clean_line: continue
 
-                  protocols = ('vless://')
+                  protocols = ('vless://', 'vmess://', 'trojan://', 'hysteria', 'hysteria2', 'tuic'
                   if not clean_line.lower().startswith(protocols):
                       continue
                       
@@ -153,7 +153,7 @@ jobs:
           echo "Working on $FILE"
           
           if [ -f "$FILE" ]; then
-            ./xray-knife http -f "$FILE" -o "$OUT" -u http://google.com/generate_204 -z xray -e -d 15000 -t 300 < /dev/null || true
+            ./xray-knife http -f "$FILE" -o "$OUT" -u http://google.com/generate_204 -z xray -e -d 10000 -t 300 < /dev/null || true
           else
             echo "Error: $FILE not found!"
           fi
