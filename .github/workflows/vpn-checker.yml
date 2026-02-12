@@ -80,56 +80,7 @@ jobs:
           TOTAL_LINES=$TOTAL_ADDED
           echo "parts_count=$TOTAL_LINES" # для отладки
 
-          MIN_LINES=1000
-          MAX_FILES=10
-          rm -f file_*.txt
-
-          if [ "$TOTAL_LINES" -le "$MIN_LINES" ]; then
-            cp temp.txt file_aa.txt
-            echo "parts=aa" >> $GITHUB_OUTPUT
-          else
-            NUM_FILES=$(( (TOTAL_LINES + MIN_LINES - 1) / MIN_LINES ))
-            if [ "$NUM_FILES" -gt "$MAX_FILES" ]; then NUM_FILES="$MAX_FILES"; fi
-            split -n "l/$NUM_FILES" --additional-suffix=.txt temp.txt file_
-    
-            parts=()
-            for f in file_*.txt; do
-              if [ -s "$f" ]; then
-                p="${f#file_}"
-                p="${p%.txt}"
-                parts+=("$p")
-              fi
-            done
-            echo "parts=$(IFS=,; echo "${parts[*]}")" >> $GITHUB_OUTPUT
-          fi
-
-          MIN_LINES=1000
-          MAX_FILES=10
-          rm -f file_*.txt
-
-          if [ "$TOTAL_LINES" -le "$MIN_LINES" ]; then
-            cp temp.txt file_aa.txt
-            echo "parts=aa" >> $GITHUB_OUTPUT
-          else
-            NUM_FILES=$(( (TOTAL_LINES + MIN_LINES - 1) / MIN_LINES ))
-            if [ "$NUM_FILES" -gt "$MAX_FILES" ]; then NUM_FILES="$MAX_FILES"; fi
-            split -n "l/$NUM_FILES" --additional-suffix=.txt temp.txt file_
-    
-            parts=()
-            for f in file_*.txt; do
-              if [ -s "$f" ]; then
-                p="${f#file_}"
-                p="${p%.txt}"
-                parts+=("$p")
-              fi
-            done
-            echo "parts=$(IFS=,; echo "${parts[*]}")" >> $GITHUB_OUTPUT
-          fi
-
-          # Далее твой код разделения split...
-
-      
-
+          
           MIN_LINES=1000
           MAX_FILES=10
 
@@ -145,8 +96,7 @@ jobs:
             NUM_FILES=$(( (TOTAL_LINES + MIN_LINES - 1) / MIN_LINES ))
             if [ "$NUM_FILES" -gt "$MAX_FILES" ]; then NUM_FILES="$MAX_FILES"; fi
     
-            # КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: 
-            # split -n l/10 разбивает ровно на 10 частей по строкам без остатка
+  
             split -n "l/$NUM_FILES" --additional-suffix=.txt temp.txt file_
     
             parts=()
