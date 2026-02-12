@@ -62,8 +62,8 @@ jobs:
           
           TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
           
-          MIN_LINES=500
-          MAX_FILES=50
+          MIN_LINES=1000
+          MAX_FILES=10
           
           if [ $TOTAL_LINES -le 1 ]; then
             echo "parts=aa" >> $GITHUB_OUTPUT
@@ -142,7 +142,7 @@ jobs:
           echo "Working on $FILE"
           
           if [ -f "$FILE" ]; then
-            ./xray-knife http -f "$FILE" -o "$OUT" -u https://google.com/generate_204 -z xray -e -d 5000 -t 500 < /dev/null || true
+            ./xray-knife http -f "$FILE" -o "$OUT" -u https://google.com/generate_204 -z xray -e -d 5000 -t 300 < /dev/null || true
           else
             echo "Error: $FILE not found!"
           fi
