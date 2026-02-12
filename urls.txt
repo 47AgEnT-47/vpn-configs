@@ -28,7 +28,7 @@ https://github.com/AvenCores/goida-vpn-#configs/raw/refs/heads/main/githubmirror
 
 https://raw.githubusercontent.com/free18/v2ray/refs/heads/main/v.txt
 
-https://raw.githubusercontent.com/Delta-Kronecker/v2ray-config-collector/refs/heads/main/data/working_url/working_all_urls.txt
+https://raw.githubusercontent.com/AvenCores/goida-vpn-configs/refs/heads/main/githubmirror/20.txt
 
 https://raw.githubusercontent.com/shabane/kamaji/refs/heads/master/hub/vless.txt
 
