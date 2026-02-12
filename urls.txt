@@ -1,4 +1,4 @@
-https://raw.githubusercontent.com/AvenCores/goida-vpn-configs/refs/heads/main/githubmirror/1.txt
+https://raw.githubusercontent.com/sakha1370/OpenRay/refs/heads/main/output/all_valid_proxies.txt
 
 https://raw.githubusercontent.com/sevcator/5ubscrpt10n/refs/heads/main/protocols/vl.txt
 
@@ -37,3 +37,33 @@ https://raw.githubusercontent.com/wuqb2i4f/xray-config-toolkit/refs/heads/main/o
 https://raw.githubusercontent.com/V2RayRoot/V2RayConfig/refs/heads/main/Config/vless.txt
 
 https://github.com/AvenCores/goida-vpn-configs/raw/refs/heads/main/githubmirror/26.txt
+
+https://raw.githubusercontent.com/yitong2333/proxy-minging/refs/heads/main/v2ray.txt
+
+https://raw.githubusercontent.com/youfoundamin/V2rayCollector/refs/heads/main/vless_iran.txt
+
+https://raw.githubusercontent.com/Argh94/Proxy-List/refs/heads/main/All_Config.txt
+
+https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/1.txt
+
+https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/11.txt
+
+https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/16.txt
+
+https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/17.txt
+
+https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/18.txt
+
+https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/20.txt
+
+https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/2.txt
+
+https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/21.txt
+
+https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/24.txt
+
+https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/3.txt
+
+https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/5.txt
+
+https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/9.txt
