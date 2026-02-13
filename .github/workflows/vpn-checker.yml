@@ -16,29 +16,67 @@ jobs:
         run: |
           > temp.txt
           > seen_bodies.txt
-          while IFS= read -r url || [ -n "$url" ]; do 
-            [[ $url == http* ]] || continue
-            if ! curl -sL --max-time 30 "$url" > current_source.txt; then
-              echo "❌ Ошибка загрузки: $url"
-              continue
-            fi
+          # --- Параллельное скачивание всех источников (50 потоков) ---
+          mkdir -p downloads
+          rm -f downloads/* 2>/dev/null || true
 
-            python3 -c "
-          import sys
+          # Создаём задачи для xargs: каждая команда curl сохраняет файл downloads/url_$idx.txt
+          awk '{print NR " " $0}' urls.txt | while read idx url; do
+            [[ $url == http* ]] || continue
+            echo "curl -sL --max-time 30 \"$url\" -o downloads/url_$idx.txt"
+          done > download_jobs.txt
+
+          echo "🚀 Скачивание в 50 параллельных потоков..."
+          xargs -P 50 -I {} sh -c {} < download_jobs.txt
+          rm download_jobs.txt
+
+          # --- Обработка скачанных файлов (последовательно) ---
+          > temp.txt
+          > seen_bodies.txt
+          TOTAL_FOUND=0
+          TOTAL_ADDED=0
+
+          for source_file in downloads/url_*.txt; do
+            [ -f "$source_file" ] || continue
+            [ -s "$source_file" ] || continue
+
+            # Восстанавливаем URL из имени файла (для вывода статистики)
+            idx="${source_file#downloads/url_}"
+            idx="${idx%.txt}"
+            url=$(sed -n "${idx}p" urls.txt)
+
+            # Выполняем Python‑обработку (с поддержкой base64, см. следующий пункт)
+            STATS=$(python3 -c "
+          import sys, base64
           protocols = ('vless://', 'vmess://', 'trojan://', 'hysteria', 'hysteria2', 'tuic')
           url = sys.argv[1]
           try:
               with open('seen_bodies.txt', 'r') as f:
                   seen = set(line.strip() for line in f)
-              with open('current_source.txt', 'r', encoding='utf-8') as f:
+              with open('$source_file', 'r', encoding='utf-8') as f:
                   lines = f.readlines()
-              total_in_url = len(lines)
+              # ---- Декодирование base64 (весь файл целиком) ----
+              if len(lines) == 1 and lines[0].strip():
+                  raw = lines[0].strip()
+                  if not raw.lower().startswith(protocols):
+                      try:
+                          # Добавляем паддинг, если не хватает символов
+                          decoded = base64.b64decode(raw + '=' * (-len(raw) % 4)).decode('utf-8')
+                          # Разбиваем на строки
+                          decoded_lines = [l.strip() for l in decoded.splitlines() if l.strip()]
+                          if decoded_lines:
+                              lines = decoded_lines
+                      except:
+                          pass  # остаётся исходная строка
+
+              found_in_url = 0
               added_from_url = 0
               with open('temp.txt', 'a', encoding='utf-8') as out, open('seen_bodies.txt', 'a', encoding='utf-8') as seen_file:
                   for line in lines:
                       clean_line = line.strip()
                       if not clean_line or not clean_line.lower().startswith(protocols):
                           continue
+                      found_in_url += 1
                       if '#' in clean_line:
                           body, remarks = clean_line.split('#', 1)
                       else:
@@ -50,12 +88,24 @@ jobs:
                           final_line = f'{body_clean}#{remarks}' if remarks else body_clean
                           out.write(final_line + '\n')
                           added_from_url += 1
-              print(f'🔗 {url} | Найдено: {total_in_url} | Добавлено уникальных: {added_from_url}')
+              print(f'{found_in_url} {added_from_url} {url}')
           except Exception as e:
-              print(f'❌ Ошибка {url}: {e}')
-          " "$url"
-          done < urls.txt
+              sys.exit(1)
+          " "$url")
 
+            if [ $? -eq 0 ]; then
+              READ_FOUND=$(echo $STATS | cut -d' ' -f1)
+              READ_ADDED=$(echo $STATS | cut -d' ' -f2)
+              READ_URL=$(echo $STATS | cut -d' ' -f3)
+              TOTAL_FOUND=$((TOTAL_FOUND + READ_FOUND))
+              TOTAL_ADDED=$((TOTAL_ADDED + READ_ADDED))
+              echo "🔗 $READ_URL | Найдено: $READ_FOUND | Добавлено: $READ_ADDED"
+            fi
+          done
+
+          rm -rf downloads
+
+          
           TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
           echo "Итоговое количество: $TOTAL_LINES"
 
