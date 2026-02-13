@@ -28,7 +28,7 @@ jobs:
 
           echo "🚀 Скачивание в 50 параллельных потоков..."
           if [ -s download_jobs.txt ]; then
-              xargs -P 50 -I {} sh -c {} < download_jobs.txt
+              xargs -P 100 -I {} sh -c {} < download_jobs.txt
           else
               echo "⚠️ Нет URL для скачивания"
           fi
@@ -105,6 +105,12 @@ jobs:
               echo "🔗 $READ_URL | Найдено: $READ_FOUND | Добавлено: $READ_ADDED"
             fi
           done
+
+            echo "=========================================="
+            echo "✅ Всего найдено ссылок: $TOTAL_FOUND"
+            echo "✅ Уникальных добавлено: $TOTAL_ADDED"
+            echo "❌ Дубликатов отброшено: $((TOTAL_FOUND - TOTAL_ADDED))"
+            echo "=========================================="
           
           rm -rf downloads
           TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
