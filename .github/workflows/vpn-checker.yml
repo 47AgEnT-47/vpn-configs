@@ -20,145 +20,150 @@ jobs:
           mkdir -p downloads
           rm -f downloads/* 2>/dev/null || true
 
-          # Создаём задачи для xargs: каждая команда curl сохраняет файл downloads/url_$idx.txt
           echo "🚀 Скачивание в 50 параллельных потоков..."
           total_urls=$(wc -l < urls.txt)
           echo "📊 Всего URL для скачивания: $total_urls"
           echo "⏳ Начинаем скачивание..."
 
           awk '{print NR " " $0}' urls.txt | while read idx url; do
-              [[ $url == http* ]] || continue
-              echo "curl -sL --connect-timeout 5 --max-time 15 \"$url\" -o downloads/url_$idx.txt || true"
+            [[ $url == http* ]] || continue
+            echo "curl -sL --connect-timeout 5 --max-time 15 \"$url\" -o downloads/url_$idx.txt || true"
           done > download_jobs.txt
 
           if [ -s download_jobs.txt ]; then
-              xargs -P 50 -I {} sh -c {} < download_jobs.txt 2>&1 | head -50 || true
+            xargs -P 50 -I {} sh -c {} < download_jobs.txt 2>&1 | head -50 || true
           fi
 
           downloaded=$(ls downloads/url_*.txt 2>/dev/null | wc -l)
           echo "✅ Скачано файлов: $downloaded из $total_urls"
-          rm download_jobs.txt  
-          
-          # --- Обработка скачанных файлов (последовательно) ---
-          > temp.txt
-          > seen_bodies.txt
+          rm -f download_jobs.txt
+
+          # --- Параллельная обработка скачанных файлов (50 потоков) ---
+          echo "🚀 Обработка файлов в 50 параллельных потоках..."
+
+          # Создаём временный Python-скрипт
+          cat > process_proxy.py << 'EOF'
+import sys, base64, os
+
+protocols = ('vless://', 'vmess://', 'trojan://', 'hysteria', 'hysteria2', 'tuic')
+
+def main():
+    source_file = sys.argv[1]
+    url = sys.argv[2]
+    
+    try:
+        with open('seen_bodies.txt', 'r') as f:
+            seen = set(line.strip() for line in f)
+    except:
+        seen = set()
+    
+    try:
+        with open(source_file, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+    except:
+        print(f'0 0 {url}')
+        return
+    
+    # Декодирование base64
+    if len(lines) == 1 and lines[0].strip():
+        raw = lines[0].strip()
+        if not raw.lower().startswith(protocols):
+            try:
+                decoded = base64.b64decode(raw + '=' * (-len(raw) % 4)).decode('utf-8')
+                decoded_lines = [l.strip() for l in decoded.splitlines() if l.strip()]
+                if decoded_lines:
+                    lines = decoded_lines
+            except:
+                pass
+    
+    found_in_url = 0
+    added_from_url = 0
+    
+    with open('temp.txt', 'a', encoding='utf-8') as out, open('seen_bodies.txt', 'a', encoding='utf-8') as seen_file:
+        for line in lines:
+            clean_line = line.strip()
+            if not clean_line or not clean_line.lower().startswith(protocols):
+                continue
+            found_in_url += 1
+            if '#' in clean_line:
+                body, remarks = clean_line.split('#', 1)
+            else:
+                body, remarks = clean_line, None
+            body_clean = ''.join(body.split())
+            if body_clean not in seen:
+                seen.add(body_clean)
+                seen_file.write(body_clean + '\n')
+                final_line = f'{body_clean}#{remarks}' if remarks else body_clean
+                out.write(final_line + '\n')
+                added_from_url += 1
+    
+    print(f'{found_in_url} {added_from_url} {url}')
+
+if __name__ == '__main__':
+    main()
+EOF
+
+          # Создаём задачи для xargs
           TOTAL_FOUND=0
           TOTAL_ADDED=0
-
-          # --- ПАРАЛЛЕЛЬНАЯ ОБРАБОТКА СКАЧАННЫХ ФАЙЛОВ (50 потоков) ---
-          echo "🚀 Обработка файлов в 50 параллельных потоков..."
-  
-          # Создаём задачи для xargs: каждая команда python3 обрабатывает один файл
-          for source_file in downloads/url_*.txt; do
-              [ -f "$source_file" ] || continue
-              [ -s "$source_file" ] || continue
-    
-              idx="${source_file#downloads/url_}"
-              idx="${idx%.txt}"
-              url=$(sed -n "${idx}p" urls.txt)
-    
-              # Экранируем url для передачи в shell
-              url_escaped=$(printf '%q' "$url")
-    
-              echo "python3 -c '
-          import sys, base64
-          protocols = (\"vless://\", \"vmess://\", \"trojan://\", \"hysteria\", \"hysteria2\", \"tuic\")
-          url = \"$url_escaped\"
-          try:
-              with open(\"seen_bodies.txt\", \"r\") as f:
-                  seen = set(line.strip() for line in f)
-              with open(\"$source_file\", \"r\", encoding=\"utf-8\") as f:
-                  lines = f.readlines()
-                  # ---- Декодирование base64 (весь файл целиком) ----
-                  if len(lines) == 1 and lines[0].strip():
-                      raw = lines[0].strip()
-                      if not raw.lower().startswith(protocols):
-                          try:
-                              decoded = base64.b64decode(raw + \"=\" * (-len(raw) % 4)).decode(\"utf-8\")
-                              decoded_lines = [l.strip() for l in decoded.splitlines() if l.strip()]
-                              if decoded_lines:
-                                  lines = decoded_lines
-                          except:
-                              pass
-              found_in_url = 0
-              added_from_url = 0
-              with open(\"temp.txt\", \"a\", encoding=\"utf-8\") as out, open(\"seen_bodies.txt\", \"a\", encoding=\"utf-8\") as seen_file:
-                  for line in lines:
-                      clean_line = line.strip()
-                      if not clean_line or not clean_line.lower().startswith(protocols):
-                          continue
-                      found_in_url += 1
-                      if \"#\" in clean_line:
-                          body, remarks = clean_line.split(\"#\", 1)
-                      else:
-                          body, remarks = clean_line, None
-                      body_clean = \"\".join(body.split())
-                      if body_clean not in seen:
-                           seen.add(body_clean)
-                           seen_file.write(body_clean + \"\n\")
-                           final_line = f\"{body_clean}#{remarks}\" if remarks else body_clean
-                           out.write(final_line + \"\n\")
-                           added_from_url += 1
-              print(f\"{found_in_url} {added_from_url} {url}\")
-          except Exception as e:
-              print(f\"0 0 {url}\")
-          ' 2>/dev/null || true"
-            done > process_jobs.txt
-
-            # Запускаем обработку в 50 потоков
-            if [ -s process_jobs.txt ]; then
-                xargs -P 50 -I {} sh -c {} < process_jobs.txt > process_output.txt 2>&1
-            fi
-  
-            # Собираем статистику из результатов
-            if [ -f process_output.txt ]; then
-                while read -r line; do
-                    if [[ $line =~ ^[0-9]+\ [0-9]+\ https?:// ]]; then
-                        READ_FOUND=$(echo $line | cut -d' ' -f1)
-                        READ_ADDED=$(echo $line | cut -d' ' -f2)
-                        READ_URL=$(echo $line | cut -d' ' -f3-)
-                        TOTAL_FOUND=$((TOTAL_FOUND + READ_FOUND))
-                        TOTAL_ADDED=$((TOTAL_ADDED + READ_ADDED))
-                        echo "🔗 $READ_URL | Найдено: $READ_FOUND | Добавлено: $READ_ADDED"
-                     fi
-                 done < process_output.txt
-                 rm process_output.txt
-            fi
-  
-            rm process_jobs.txt
-            echo "=========================================="
-            echo "✅ Всего найдено ссылок: $TOTAL_FOUND"
-            echo "✅ Уникальных добавлено: $TOTAL_ADDED"
-            echo "❌ Дубликатов отброшено: $((TOTAL_FOUND - TOTAL_ADDED))"
-            echo "=========================================="
           
+          for source_file in downloads/url_*.txt; do
+            [ -f "$source_file" ] || continue
+            [ -s "$source_file" ] || continue
+            
+            idx="${source_file#downloads/url_}"
+            idx="${idx%.txt}"
+            url=$(sed -n "${idx}p" urls.txt)
+            
+            echo "python3 process_proxy.py \"$source_file\" \"$url\" || true"
+          done > process_jobs.txt
+
+          # Запускаем обработку в 50 потоков
+          if [ -s process_jobs.txt ]; then
+            xargs -P 50 -I {} sh -c {} < process_jobs.txt > process_output.txt 2>&1
+          fi
+
+          # Собираем статистику
+          if [ -f process_output.txt ]; then
+            while read -r line; do
+              if [[ $line =~ ^[0-9]+\ [0-9]+\ https?:// ]]; then
+                READ_FOUND=$(echo $line | cut -d' ' -f1)
+                READ_ADDED=$(echo $line | cut -d' ' -f2)
+                READ_URL=$(echo $line | cut -d' ' -f3-)
+                TOTAL_FOUND=$((TOTAL_FOUND + READ_FOUND))
+                TOTAL_ADDED=$((TOTAL_ADDED + READ_ADDED))
+                echo "🔗 $READ_URL | Найдено: $READ_FOUND | Добавлено: $READ_ADDED"
+              fi
+            done < process_output.txt
+            rm -f process_output.txt
+          fi
+
+          rm -f process_jobs.txt process_proxy.py
           rm -rf downloads
+
+          echo "=========================================="
+          echo "✅ Всего найдено ссылок: $TOTAL_FOUND"
+          echo "✅ Уникальных добавлено: $TOTAL_ADDED"
+          echo "👯 Дубликатов отброшено: $((TOTAL_FOUND - TOTAL_ADDED))"
+          echo "=========================================="
+
           TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
           echo "Итоговое количество: $TOTAL_LINES"
 
-
           MIN_LINES=1000
-          MAX_FILES=20
-
-          # Удаляем старые файлы, чтобы не смешались
+          MAX_FILES=10
           rm -f file_*.txt
 
           if [ "$TOTAL_LINES" -le "$MIN_LINES" ]; then
-            # Если строк мало — одна часть
             cp temp.txt file_aa.txt
             echo "parts=aa" >> $GITHUB_OUTPUT
           else
-            # Считаем, на сколько частей бить (не более 10)
             NUM_FILES=$(( (TOTAL_LINES + MIN_LINES - 1) / MIN_LINES ))
             if [ "$NUM_FILES" -gt "$MAX_FILES" ]; then NUM_FILES="$MAX_FILES"; fi
-    
-            # КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: 
-            # split -n l/10 разбивает ровно на 10 частей по строкам без остатка
             split -n "l/$NUM_FILES" --additional-suffix=.txt temp.txt file_
-    
+            
             parts=()
             for f in file_*.txt; do
-              # Проверяем, что файл не пустой (на всякий случай)
               if [ -s "$f" ]; then
                 p="${f#file_}"
                 p="${p%.txt}"
@@ -167,7 +172,7 @@ jobs:
             done
             echo "parts=$(IFS=,; echo "${parts[*]}")" >> $GITHUB_OUTPUT
           fi
-
+          
 
           
       - name: Set Matrix
