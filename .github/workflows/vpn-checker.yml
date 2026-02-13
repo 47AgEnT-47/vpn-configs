@@ -100,7 +100,7 @@ jobs:
               TOTAL_ADDED=$((TOTAL_ADDED + READ_ADDED))
               echo "🔗 $READ_URL | Найдено: $READ_FOUND | Добавлено: $READ_ADDED"
             fi
-
+          done
           
           rm -rf downloads
           TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
