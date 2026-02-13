@@ -60,14 +60,12 @@ jobs:
                   raw = lines[0].strip()
                   if not raw.lower().startswith(protocols):
                       try:
-                          # Добавляем паддинг, если не хватает символов
                           decoded = base64.b64decode(raw + '=' * (-len(raw) % 4)).decode('utf-8')
-                          # Разбиваем на строки
                           decoded_lines = [l.strip() for l in decoded.splitlines() if l.strip()]
                           if decoded_lines:
                               lines = decoded_lines
                       except:
-                          pass  # остаётся исходная строка
+                          pass
 
               found_in_url = 0
               added_from_url = 0
@@ -90,10 +88,11 @@ jobs:
                           added_from_url += 1
               print(f'{found_in_url} {added_from_url} {url}')
           except Exception as e:
-              sys.exit(1)
-          " "$url")
-
-            if [ $? -eq 0 ]; then
+              # В случае ошибки – не прерываем весь workflow, выводим 0 0
+              print(f'0 0 {url}')
+          " "$url" || true)
+          
+            if [ -n "$STATS" ]; then
               READ_FOUND=$(echo $STATS | cut -d' ' -f1)
               READ_ADDED=$(echo $STATS | cut -d' ' -f2)
               READ_URL=$(echo $STATS | cut -d' ' -f3)
@@ -101,11 +100,9 @@ jobs:
               TOTAL_ADDED=$((TOTAL_ADDED + READ_ADDED))
               echo "🔗 $READ_URL | Найдено: $READ_FOUND | Добавлено: $READ_ADDED"
             fi
-          done
-
-          rm -rf downloads
 
           
+          rm -rf downloads
           TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
           echo "Итоговое количество: $TOTAL_LINES"
 
