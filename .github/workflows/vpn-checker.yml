@@ -20,7 +20,7 @@ jobs:
           mkdir -p downloads
           rm -f downloads/* 2>/dev/null || true
 
-          echo "🚀 Скачивание в 50 параллельных потоков..."
+          echo "🚀 Скачивание в 100 параллельных потоков..."
           total_urls=$(wc -l < urls.txt)
           echo "📊 Всего URL для скачивания: $total_urls"
           echo "⏳ Начинаем скачивание..."
@@ -116,7 +116,7 @@ jobs:
           done > process_jobs.txt
 
           if [ -s process_jobs.txt ]; then
-            xargs -P 200 -I {} sh -c {} < process_jobs.txt > process_output.txt 2>&1
+            xargs -P 100 -I {} sh -c {} < process_jobs.txt > process_output.txt 2>&1
           fi
 
           if [ -f process_output.txt ]; then
