@@ -1,7 +1,7 @@
 name: vpn-checker
 on:
   repository_dispatch:
-    #types: [vpn-checker]
+    types: [vpn-checker]
   workflow_dispatch:           
 jobs:
   prepare:
@@ -146,7 +146,8 @@ jobs:
           echo "Итоговое количество: $TOTAL_LINES"
 
           MIN_LINES=1000
-          MAX_FILES=10
+          MAX_FILES=20
+          
           rm -f file_*.txt
 
           if [ "$TOTAL_LINES" -le "$MIN_LINES" ]; then
