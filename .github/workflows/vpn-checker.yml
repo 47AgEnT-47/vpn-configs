@@ -31,7 +31,7 @@ jobs:
           done > download_jobs.txt
 
           if [ -s download_jobs.txt ]; then
-            xargs -P 200 -I {} sh -c {} < download_jobs.txt 2>&1 | head -200 || true
+            xargs -P 100 -I {} sh -c {} < download_jobs.txt 2>&1 | head -100 || true
           fi
 
           downloaded=$(ls downloads/url_*.txt 2>/dev/null | wc -l)
