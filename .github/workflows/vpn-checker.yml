@@ -118,7 +118,7 @@ jobs:
 
 
           MIN_LINES=1000
-          MAX_FILES=10
+          MAX_FILES=100
 
           # Удаляем старые файлы, чтобы не смешались
           rm -f file_*.txt
