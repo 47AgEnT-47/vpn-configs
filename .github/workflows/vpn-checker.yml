@@ -31,7 +31,7 @@ jobs:
           done > download_jobs.txt
 
           if [ -s download_jobs.txt ]; then
-            xargs -P 100 -I {} sh -c {} < download_jobs.txt 2>&1 | head -100 || true
+            xargs -P 50 -I {} sh -c {} < download_jobs.txt 2>&1 | head -50 || true
           fi
 
           downloaded=$(ls downloads/url_*.txt 2>/dev/null | wc -l)
@@ -49,12 +49,7 @@ jobs:
           def main():
               source_file = sys.argv[1]
               url = sys.argv[2]
-              
-              try:
-                  with open('seen_bodies.txt', 'r') as f:
-                      seen = set(line.strip() for line in f)
-              except:
-                  seen = set()
+              part_id = sys.argv[3]
               
               try:
                   with open(source_file, 'r', encoding='utf-8') as f:
@@ -75,9 +70,9 @@ jobs:
                           pass
               
               found_in_url = 0
-              added_from_url = 0
+              temp_out = f'temp_{part_id}.txt'
               
-              with open('temp.txt', 'a', encoding='utf-8') as out, open('seen_bodies.txt', 'a', encoding='utf-8') as seen_file:
+              with open(temp_out, 'a', encoding='utf-8') as out:
                   for line in lines:
                       clean_line = line.strip()
                       if not clean_line or not clean_line.lower().startswith(protocols):
@@ -88,22 +83,16 @@ jobs:
                       else:
                           body, remarks = clean_line, None
                       body_clean = ''.join(body.split())
-                      if body_clean not in seen:
-                          seen.add(body_clean)
-                          seen_file.write(body_clean + '\n')
-                          final_line = f'{body_clean}#{remarks}' if remarks else body_clean
-                          out.write(final_line + '\n')
-                          added_from_url += 1
+                      final_line = f'{body_clean}#{remarks}' if remarks else body_clean
+                      out.write(final_line + '\n')
               
-              print(f'{found_in_url} {added_from_url} {url}')
+              print(f'{found_in_url} {found_in_url} {url}')
 
           if __name__ == '__main__':
               main()
           EOF
 
-          TOTAL_FOUND=0
-          TOTAL_ADDED=0
-          
+          # Создаём задачи для xargs
           for source_file in downloads/url_*.txt; do
             [ -f "$source_file" ] || continue
             [ -s "$source_file" ] || continue
@@ -112,28 +101,59 @@ jobs:
             idx="${idx%.txt}"
             url=$(sed -n "${idx}p" urls.txt)
             
-            echo "python3 process_proxy.py \"$source_file\" \"$url\" || true"
+            echo "python3 process_proxy.py \"$source_file\" \"$url\" \"$idx\" || true"
           done > process_jobs.txt
 
+          # Запускаем обработку в 50 потоков
           if [ -s process_jobs.txt ]; then
-            xargs -P 100 -I {} sh -c {} < process_jobs.txt > process_output.txt 2>&1
-          fi
-
-          if [ -f process_output.txt ]; then
-            while read -r line; do
-              if [[ $line =~ ^[0-9]+\ [0-9]+\ https?:// ]]; then
-                READ_FOUND=$(echo $line | cut -d' ' -f1)
-                READ_ADDED=$(echo $line | cut -d' ' -f2)
-                READ_URL=$(echo $line | cut -d' ' -f3-)
-                TOTAL_FOUND=$((TOTAL_FOUND + READ_FOUND))
-                TOTAL_ADDED=$((TOTAL_ADDED + READ_ADDED))
-                echo "🔗 $READ_URL | Найдено: $READ_FOUND | Добавлено: $READ_ADDED"
-              fi
-            done < process_output.txt
-            rm -f process_output.txt
+            xargs -P 50 -I {} sh -c {} < process_jobs.txt
           fi
 
           rm -f process_jobs.txt process_proxy.py
+
+          # --- Объединение и дедупликация ---
+          echo "🔄 Объединение и дедупликация..."
+          
+          > temp.txt
+          > seen_bodies.txt
+          
+          TOTAL_FOUND=0
+          TOTAL_ADDED=0
+          
+          for temp_file in temp_*.txt; do
+            [ -f "$temp_file" ] || continue
+            [ -s "$temp_file" ] || continue
+            
+            idx="${temp_file#temp_}"
+            idx="${idx%.txt}"
+            url=$(sed -n "${idx}p" urls.txt)
+            
+            found_in_url=$(wc -l < "$temp_file")
+            TOTAL_FOUND=$((TOTAL_FOUND + found_in_url))
+            
+            added_from_url=0
+            while IFS= read -r line; do
+              if [ -n "$line" ]; then
+                if [[ "$line" == *"#"* ]]; then
+                  body="${line%#*}"
+                else
+                  body="$line"
+                fi
+                body_clean=$(echo "$body" | tr -d ' ')
+                if ! grep -Fxq "$body_clean" seen_bodies.txt 2>/dev/null; then
+                  echo "$body_clean" >> seen_bodies.txt
+                  echo "$line" >> temp.txt
+                  added_from_url=$((added_from_url + 1))
+                fi
+              fi
+            done < "$temp_file"
+            
+            TOTAL_ADDED=$((TOTAL_ADDED + added_from_url))
+            echo "🔗 $url | Найдено: $found_in_url | Добавлено: $added_from_url"
+            
+            rm -f "$temp_file"
+          done
+
           rm -rf downloads
 
           echo "=========================================="
@@ -146,8 +166,7 @@ jobs:
           echo "Итоговое количество: $TOTAL_LINES"
 
           MIN_LINES=1000
-          MAX_FILES=20
-          
+          MAX_FILES=10
           rm -f file_*.txt
 
           if [ "$TOTAL_LINES" -le "$MIN_LINES" ]; then
@@ -168,13 +187,10 @@ jobs:
             done
             echo "parts=$(IFS=,; echo "${parts[*]}")" >> $GITHUB_OUTPUT
           fi
-          
 
-          
       - name: Set Matrix
         id: set-matrix
         run: |
-          # Создаем матрицу
           IFS=',' read -ra PARTS <<< "${{ steps.prepare.outputs.parts }}"
           MATRIX='{"part":['
           for i in "${!PARTS[@]}"; do
