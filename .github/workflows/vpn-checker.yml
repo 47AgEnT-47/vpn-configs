@@ -23,7 +23,7 @@ jobs:
           # Создаём задачи для xargs: каждая команда curl сохраняет файл downloads/url_$idx.txt
           awk '{print NR " " $0}' urls.txt | while read idx url; do
             [[ $url == http* ]] || continue
-            echo "curl -sL --max-time 30 \"$url\" -o downloads/url_$idx.txt"
+            echo "curl -sL --max-time 30 \"$url\" -o downloads/url_$idx.txt || true"
           done > download_jobs.txt
 
           echo "🚀 Скачивание в 50 параллельных потоков..."
