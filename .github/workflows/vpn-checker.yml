@@ -22,15 +22,22 @@ jobs:
 
           # Создаём задачи для xargs: каждая команда curl сохраняет файл downloads/url_$idx.txt
           echo "🚀 Скачивание в 50 параллельных потоков..."
+          total_urls=$(wc -l < urls.txt)
+          echo "📊 Всего URL для скачивания: $total_urls"
+          echo "⏳ Начинаем скачивание..."
+
           awk '{print NR " " $0}' urls.txt | while read idx url; do
               [[ $url == http* ]] || continue
-              echo "curl -sL --max-time 30 \"$url\" -o downloads/url_$idx.txt || true"
+              echo "curl -sL --connect-timeout 5 --max-time 15 \"$url\" -o downloads/url_$idx.txt || true"
           done > download_jobs.txt
 
           if [ -s download_jobs.txt ]; then
               xargs -P 50 -I {} sh -c {} < download_jobs.txt 2>&1 | head -50 || true
           fi
 
+          downloaded=$(ls downloads/url_*.txt 2>/dev/null | wc -l)
+          echo "✅ Скачано файлов: $downloaded из $total_urls"
+          rm download_jobs.txt  
           
           # --- Обработка скачанных файлов (последовательно) ---
           > temp.txt
