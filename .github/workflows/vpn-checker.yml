@@ -16,8 +16,6 @@ jobs:
         run: |
           > temp.txt
           > seen_bodies.txt
-          TOTAL_FOUND=0
-          TOTAL_ADDED=0
           while IFS= read -r url || [ -n "$url" ]; do 
             [[ $url == http* ]] || continue
             if ! curl -sL --max-time 30 "$url" > current_source.txt; then
@@ -25,8 +23,7 @@ jobs:
               continue
             fi
 
-            # Выполняем Python и ловим его вывод в переменные
-            STATS=$(python3 -c "
+            python3 -c "
           import sys
           protocols = ('vless://', 'vmess://', 'trojan://', 'hysteria', 'hysteria2', 'tuic')
           url = sys.argv[1]
@@ -35,14 +32,13 @@ jobs:
                   seen = set(line.strip() for line in f)
               with open('current_source.txt', 'r', encoding='utf-8') as f:
                   lines = f.readlines()
-              found_in_url = 0
+              total_in_url = len(lines)
               added_from_url = 0
               with open('temp.txt', 'a', encoding='utf-8') as out, open('seen_bodies.txt', 'a', encoding='utf-8') as seen_file:
                   for line in lines:
                       clean_line = line.strip()
                       if not clean_line or not clean_line.lower().startswith(protocols):
                           continue
-                      found_in_url += 1
                       if '#' in clean_line:
                           body, remarks = clean_line.split('#', 1)
                       else:
@@ -54,54 +50,14 @@ jobs:
                           final_line = f'{body_clean}#{remarks}' if remarks else body_clean
                           out.write(final_line + '\n')
                           added_from_url += 1
-              print(f'{found_in_url} {added_from_url} {url}')
+              print(f'🔗 {url} | Найдено: {total_in_url} | Добавлено уникальных: {added_from_url}')
           except Exception as e:
-              sys.exit(1)
-          " "$url")
-
-            if [ $? -eq 0 ]; then
-              READ_FOUND=$(echo $STATS | cut -d' ' -f1)
-              READ_ADDED=$(echo $STATS | cut -d' ' -f2)
-              READ_URL=$(echo $STATS | cut -d' ' -f3)
-              
-              TOTAL_FOUND=$((TOTAL_FOUND + READ_FOUND))
-              TOTAL_ADDED=$((TOTAL_ADDED + READ_ADDED))
-              
-              echo "🔗 $READ_URL | Найдено: $READ_FOUND | Добавлено: $READ_ADDED"
-            fi
+              print(f'❌ Ошибка {url}: {e}')
+          " "$url"
           done < urls.txt
 
-          TOTAL_DUPS=$((TOTAL_FOUND - TOTAL_ADDED))
-          echo "=========================================="
-          echo "✅ Итого уникальных: $TOTAL_ADDED"
-          echo "👯 Всего дубликатов: $TOTAL_DUPS"
-          echo "=========================================="
-
-          TOTAL_LINES=$TOTAL_ADDED
-          echo "parts_count=$TOTAL_LINES" # для отладки
-
-          MIN_LINES=1000
-          MAX_FILES=10
-          rm -f file_*.txt
-
-          if [ "$TOTAL_LINES" -le "$MIN_LINES" ]; then
-            cp temp.txt file_aa.txt
-            echo "parts=aa" >> $GITHUB_OUTPUT
-          else
-            NUM_FILES=$(( (TOTAL_LINES + MIN_LINES - 1) / MIN_LINES ))
-            if [ "$NUM_FILES" -gt "$MAX_FILES" ]; then NUM_FILES="$MAX_FILES"; fi
-            split -n "l/$NUM_FILES" --additional-suffix=.txt temp.txt file_
-    
-            parts=()
-            for f in file_*.txt; do
-              if [ -s "$f" ]; then
-                p="${f#file_}"
-                p="${p%.txt}"
-                parts+=("$p")
-              fi
-            done
-            echo "parts=$(IFS=,; echo "${parts[*]}")" >> $GITHUB_OUTPUT
-          fi
+          TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
+          echo "Итоговое количество: $TOTAL_LINES"
 
           MIN_LINES=1000
           MAX_FILES=10
