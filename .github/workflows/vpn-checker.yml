@@ -24,8 +24,8 @@ jobs:
           - name: Set Matrix
             id: set-matrix
             run: |
-              chmod +x .github/scripts/generate-matrix.sh
-              MATRIX=$( .github/scripts/generate-matrix.sh "${{ steps.prepare.outputs.parts }}" )
+              chmod +x .github/scripts/generate_matrix.sh
+              MATRIX=$( .github/scripts/generate_matrix.sh "${{ steps.prepare.outputs.parts }}" )
               echo "$MATRIX" >> $GITHUB_OUTPUT
     
       - name: Upload Parts
