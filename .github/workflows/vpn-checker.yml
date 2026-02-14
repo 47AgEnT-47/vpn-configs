@@ -95,7 +95,9 @@ jobs:
           merge-multiple: true
 
       - name: Merge Results
-        run: .github/scripts/merge-results.sh
+        run: |
+          chmod +x .github/scripts/merge-results.sh
+          .github/scripts/merge-results.sh
 
       - name: Push to Repository
         env:
