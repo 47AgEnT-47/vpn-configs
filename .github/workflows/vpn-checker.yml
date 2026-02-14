@@ -213,7 +213,7 @@ jobs:
 
       - name: Download and Prepare xray-knife
         run: |
-          curl -L "https://github.com/47AgEnT-47/xray-knife/releases/download/v8.0.0/Xray-knife-linux-64.zip" -o xray-knife.zip
+          curl -L "https://github.com/47AgEnT-47/xray-knife/releases/download/v.8.0.0/Xray-knife-linux-64.zip" -o xray-knife.zip
           unzip -o xray-knife.zip xray-knife
           chmod +x xray-knife
 
