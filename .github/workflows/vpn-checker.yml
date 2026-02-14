@@ -139,14 +139,14 @@ jobs:
           echo "=========================================="
           echo "✅ Всего найдено ссылок: $TOTAL_FOUND"
           echo "✅ Уникальных добавлено: $TOTAL_ADDED"
-          echo "👯 Дубликатов отброшено: $((TOTAL_FOUND - TOTAL_ADDED))"
+          echo "❌Дубликатов отброшено: $((TOTAL_FOUND - TOTAL_ADDED))"
           echo "=========================================="
 
           TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
           echo "Итоговое количество: $TOTAL_LINES"
 
           MIN_LINES=1000
-          MAX_FILES=20
+          MAX_FILES=10
         
           
           rm -f file_*.txt
