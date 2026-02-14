@@ -139,7 +139,7 @@ jobs:
           echo "=========================================="
           echo "✅ Всего найдено ссылок: $TOTAL_FOUND"
           echo "✅ Уникальных добавлено: $TOTAL_ADDED"
-          echo "❌Дубликатов отброшено: $((TOTAL_FOUND - TOTAL_ADDED))"
+          echo "❌ Дубликатов отброшено: $((TOTAL_FOUND - TOTAL_ADDED))"
           echo "=========================================="
 
           TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
