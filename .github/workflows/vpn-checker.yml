@@ -16,21 +16,21 @@ jobs:
         run: |
           chmod +x .github/scripts/prepare-proxy-list.sh
           .github/scripts/prepare-proxy-list.sh
-          cat parts_output.txt >> $GITHUB_OUTPUT          
-   
+          cat parts_output.txt >> $GITHUB_OUTPUT
+
       - name: Set Matrix
         id: set-matrix
         run: |
           chmod +x .github/scripts/generate-matrix.sh
           MATRIX=$( .github/scripts/generate-matrix.sh "${{ steps.prepare.outputs.parts }}" )
           echo "$MATRIX" >> $GITHUB_OUTPUT
-    
+
       - name: Upload Parts
         uses: actions/upload-artifact@v4
         with:
-           name: proxy-parts
-           path: file_*.txt
-           retention-days: 1
+          name: proxy-parts
+          path: file_*.txt
+          retention-days: 1
 
   check-proxies:
     needs: prepare
@@ -53,7 +53,23 @@ jobs:
         run: |
           chmod +x .github/scripts/setup-xray.sh
           .github/scripts/setup-xray.sh
+
+      - name: Run check
+        run: |
+          FILE="file_${{ matrix.part }}.txt"
+          OUT="vless_${{ matrix.part }}.txt"
           
+          echo "Working on $FILE"
+          
+          if [ -f "$FILE" ]; then
+            ./xray-knife http -f "$FILE" -o "$OUT" -u http://google.com/generate_204 -z xray -e -d 10000 -t 300 < /dev/null || true
+          else
+            echo "Error: $FILE not found!"
+          fi
+          
+          [ ! -f "$OUT" ] && touch "$OUT"
+          echo "Resulting lines in $OUT: $(wc -l < $OUT)"
+
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
@@ -79,9 +95,7 @@ jobs:
           merge-multiple: true
 
       - name: Merge Results
-        run: |
-          grep -h -v '^$' vless_*.txt > configs.txt 2>/dev/null || touch configs.txt
-          echo "Final count: $(wc -l < configs.txt)"
+        run: .github/scripts/merge-results.sh
 
       - name: Push to Repository
         env:
