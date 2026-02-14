@@ -153,28 +153,11 @@ jobs:
           name: proxy-parts
           path: .
 
-      - name: Download and Prepare xray-knife
+      - name: Setup xray-knife
         run: |
-          curl -L "https://github.com/47AgEnT-47/xray-knife/releases/download/v.8.0.0/Xray-knife-linux-64.zip" -o xray-knife.zip
-          unzip -o xray-knife.zip xray-knife
-          chmod +x xray-knife
-
-      - name: Run check
-        run: |
-          FILE="file_${{ matrix.part }}.txt"
-          OUT="vless_${{ matrix.part }}.txt"
+          chmod +x .github/scripts/setup-xray.sh
+          .github/scripts/setup-xray.sh
           
-          echo "Working on $FILE"
-          
-          if [ -f "$FILE" ]; then
-            ./xray-knife http -f "$FILE" -o "$OUT" -u http://google.com/generate_204 -z xray -e -d 10000 -t 300 < /dev/null || true
-          else
-            echo "Error: $FILE not found!"
-          fi
-          
-          [ ! -f "$OUT" ] && touch "$OUT"
-          echo "Resulting lines in $OUT: $(wc -l < $OUT)"
-
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
