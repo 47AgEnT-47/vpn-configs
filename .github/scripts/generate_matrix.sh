@@ -1,9 +1,7 @@
 #!/bin/bash
 set -e
-
-parts_list="$1"  # ожидаем строку вида "aa,ab,ac"
+parts_list="$1"
 IFS=',' read -ra PARTS <<< "$parts_list"
-
 MATRIX='{"part":['
 for i in "${!PARTS[@]}"; do
   if [ $i -gt 0 ]; then
@@ -12,5 +10,4 @@ for i in "${!PARTS[@]}"; do
   MATRIX+="\"${PARTS[$i]}\""
 done
 MATRIX+=']}'
-
 echo "matrix=$MATRIX"
