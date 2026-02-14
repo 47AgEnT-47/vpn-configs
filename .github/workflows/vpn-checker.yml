@@ -21,12 +21,9 @@ jobs:
       - name: Set Matrix
         id: set-matrix
         run: |
-          - name: Set Matrix
-            id: set-matrix
-            run: |
-              chmod +x .github/scripts/generate_matrix.sh
-              MATRIX=$( .github/scripts/generate_matrix.sh "${{ steps.prepare.outputs.parts }}" )
-              echo "$MATRIX" >> $GITHUB_OUTPUT
+          chmod +x .github/scripts/generate_matrix.sh
+          MATRIX=$( .github/scripts/generate_matrix.sh "${{ steps.prepare.outputs.parts }}" )
+          echo "$MATRIX" >> $GITHUB_OUTPUT
     
       - name: Upload Parts
         uses: actions/upload-artifact@v4
