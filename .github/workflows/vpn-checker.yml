@@ -14,33 +14,9 @@ jobs:
       - name: Prepare Proxy List
         id: prepare
         run: |
-          > temp.txt
-          > seen_bodies.txt
-          # --- Параллельное скачивание всех источников (50 потоков) ---
-          mkdir -p downloads
-          rm -f downloads/* 2>/dev/null || true
-
-          echo "🚀 Скачивание в 100 параллельных потоков..."
-          total_urls=$(wc -l < urls.txt)
-          echo "📊 Всего URL для скачивания: $total_urls"
-          echo "⏳ Начинаем скачивание..."
-
-          awk '{print NR " " $0}' urls.txt | while read idx url; do
-            [[ $url == http* ]] || continue
-            echo "curl -sL --connect-timeout 5 --max-time 15 \"$url\" -o downloads/url_$idx.txt || true"
-          done > download_jobs.txt
-
-          if [ -s download_jobs.txt ]; then
-            xargs -P 100 -I {} sh -c {} < download_jobs.txt 2>&1 | head -100 || true
-          fi
-
-          downloaded=$(ls downloads/url_*.txt 2>/dev/null | wc -l)
-          echo "✅ Скачано файлов: $downloaded из $total_urls"
-          rm -f download_jobs.txt
-
-          # --- Параллельная обработка скачанных файлов (50 потоков) ---
-          echo "🚀 Обработка файлов в 50 параллельных потоках..."
-          
+          chmod +x .github/scripts/prepare-proxy-list.sh
+          .github/scripts/prepare-proxy-list.sh
+          cat parts_output.txt >> $GITHUB_OUTPUT          
 
 
           TOTAL_FOUND=0
