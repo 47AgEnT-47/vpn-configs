@@ -39,7 +39,7 @@ for source_file in downloads/url_*.txt; do
   idx="${source_file#downloads/url_}"
   idx="${idx%.txt}"
   url=$(sed -n "${idx}p" urls.txt)
-  echo "python3 .github/scripts/process_proxy.py \"$source_file\" \"$url\" || true"
+  echo "python3 .github/scripts/process-proxy.py \"$source_file\" \"$url\" || true"
 done > process_jobs.txt
 
 if [ -s process_jobs.txt ]; then
