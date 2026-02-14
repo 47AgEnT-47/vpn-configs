@@ -17,100 +17,23 @@ jobs:
           chmod +x .github/scripts/prepare-proxy-list.sh
           .github/scripts/prepare-proxy-list.sh
           cat parts_output.txt >> $GITHUB_OUTPUT          
-
-
-          TOTAL_FOUND=0
-          TOTAL_ADDED=0
-          
-          for source_file in downloads/url_*.txt; do
-            [ -f "$source_file" ] || continue
-            [ -s "$source_file" ] || continue
-            
-            idx="${source_file#downloads/url_}"
-            idx="${idx%.txt}"
-            url=$(sed -n "${idx}p" urls.txt)
-            
-            echo "python3 .github/scripts/process_proxy.py \"$source_file\" \"$url\" || true"
-          done > process_jobs.txt
-
-          if [ -s process_jobs.txt ]; then
-            xargs -P 100 -I {} sh -c {} < process_jobs.txt > process_output.txt 2>&1
-          fi
-
-          if [ -f process_output.txt ]; then
-            while read -r line; do
-              if [[ $line =~ ^[0-9]+\ [0-9]+\ https?:// ]]; then
-                READ_FOUND=$(echo $line | cut -d' ' -f1)
-                READ_ADDED=$(echo $line | cut -d' ' -f2)
-                READ_URL=$(echo $line | cut -d' ' -f3-)
-                TOTAL_FOUND=$((TOTAL_FOUND + READ_FOUND))
-                TOTAL_ADDED=$((TOTAL_ADDED + READ_ADDED))
-                echo "🔗 $READ_URL | Найдено: $READ_FOUND | Добавлено: $READ_ADDED"
-              fi
-            done < process_output.txt
-            rm -f process_output.txt
-          fi
-
-          rm -f process_jobs.txt process_proxy.py
-          rm -rf downloads
-
-          echo "=========================================="
-          echo "✅ Всего найдено ссылок: $TOTAL_FOUND"
-          echo "✅ Уникальных добавлено: $TOTAL_ADDED"
-          echo "❌ Дубликатов отброшено: $((TOTAL_FOUND - TOTAL_ADDED))"
-          echo "=========================================="
-
-          TOTAL_LINES=$(wc -l < temp.txt 2>/dev/null || echo "0")
-          echo "Итоговое количество: $TOTAL_LINES"
-
-          MIN_LINES=1000
-          MAX_FILES=20
-        
-          
-          rm -f file_*.txt
-
-          if [ "$TOTAL_LINES" -le "$MIN_LINES" ]; then
-            cp temp.txt file_aa.txt
-            echo "parts=aa" >> $GITHUB_OUTPUT
-          else
-            NUM_FILES=$(( (TOTAL_LINES + MIN_LINES - 1) / MIN_LINES ))
-            if [ "$NUM_FILES" -gt "$MAX_FILES" ]; then NUM_FILES="$MAX_FILES"; fi
-            split -n "l/$NUM_FILES" --additional-suffix=.txt temp.txt file_
-            
-            parts=()
-            for f in file_*.txt; do
-              if [ -s "$f" ]; then
-                p="${f#file_}"
-                p="${p%.txt}"
-                parts+=("$p")
-              fi
-            done
-            echo "parts=$(IFS=,; echo "${parts[*]}")" >> $GITHUB_OUTPUT
-          fi
-          
-
-          
+   
       - name: Set Matrix
         id: set-matrix
         run: |
-          # Создаем матрицу
-          IFS=',' read -ra PARTS <<< "${{ steps.prepare.outputs.parts }}"
-          MATRIX='{"part":['
-          for i in "${!PARTS[@]}"; do
-            if [ $i -gt 0 ]; then
-              MATRIX+=","
-            fi
-            MATRIX+="\"${PARTS[$i]}\""
-          done
-          MATRIX+=']}'
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
-
+          - name: Set Matrix
+            id: set-matrix
+            run: |
+              chmod +x .github/scripts/generate-matrix.sh
+              MATRIX=$( .github/scripts/generate-matrix.sh "${{ steps.prepare.outputs.parts }}" )
+              echo "$MATRIX" >> $GITHUB_OUTPUT
+    
       - name: Upload Parts
         uses: actions/upload-artifact@v4
         with:
-          name: proxy-parts
-          path: file_*.txt
-          retention-days: 1
+           name: proxy-parts
+           path: file_*.txt
+           retention-days: 1
 
   check-proxies:
     needs: prepare
