@@ -109,7 +109,8 @@ jobs:
           git add configs.txt
           if ! git diff --staged --quiet; then
             git commit -m "Update proxies: $(date +'%Y-%m-%d %H:%M')"
-            git reset --hard HEAD
+            git checkout . 
+            git clean -fd
             git pull --rebase origin main || git pull --rebase origin master
             git push origin HEAD
           fi
