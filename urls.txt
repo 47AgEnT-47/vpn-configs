@@ -169,7 +169,6 @@ https://raw.githubusercontent.com/Edudotnexx/multi-proxy-config-fetcher/refs/hea
 https://raw.githubusercontent.com/Delta-Kronecker/Xray/refs/heads/main/data/working_url/working_all_urls.txt
 https://raw.githubusercontent.com/ebrasha/free-v2ray-public-list/refs/heads/main/V2Ray-Config-By-EbraSha.txt
 https://github.com/Surfboardv2ray/Proxy-sorter/raw/refs/heads/main/submerge/converted.txt
-https://raw.githubusercontent.com/217CnoC/configs-collector-v2ray/refs/heads/main/sub/all_configs.txt
 https://raw.githubusercontent.com/nikita29a/FreeProxyList/refs/heads/main/mirror/11.txt
 https://raw.githubusercontent.com/Danialsamadi/v2go/refs/heads/main/AllConfigsSub.txt
 https://raw.githubusercontent.com/ebrasha/free-v2ray-public-list/refs/heads/main/V2Ray-Config-By-EbraSha-All-Type.txt
