@@ -25,6 +25,9 @@ https://raw.githubusercontent.com/10ium/base64-encoder/refs/heads/main/encoded/T
 https://raw.githubusercontent.com/10ium/base64-encoder/refs/heads/main/encoded/amiralter_config.txt
 https://raw.githubusercontent.com/10ium/base64-encoder/refs/heads/main/encoded/arshiacomplus_v2rayExtractor_mix.txt
 https://raw.githubusercontent.com/10ium/base64-encoder/refs/heads/main/encoded/awesome-vpn_all
+https://raw.githubusercontent.com/ebrasha/free-v2ray-public-list/refs/heads/main/all_extracted_configs.txt
+https://raw.githubusercontent.com/10ium/base64-encoder/refs/heads/main/encoded/miladtahanian_config.txt
+
 https://raw.githubusercontent.com/10ium/free-config/refs/heads/main/HighSpeed.txt
 https://raw.githubusercontent.com/10ium/HiN-VPN/main/subscription/base64/mix
 https://raw.githubusercontent.com/10ium/multi-proxy-config-fetcher/refs/heads/main/configs/proxy_configs.txt
