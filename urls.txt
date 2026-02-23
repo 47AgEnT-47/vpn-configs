@@ -321,3 +321,4 @@ https://raw.githubusercontent.com/zjfb/SubCrawler/main/sub/share/all
 https://raw.githubusercontent.com/zjr13808836946/zjr_clash/main/V2_SSR_M
 https://raw.githubusercontent.com/ZY-404/v2ray/main/v2ray.txt
 https://raw.githubusercontent.com/ZywChannel/free/main/sub
+https://raw.githubusercontent.com/zieng2/wl/main/vless_universal.txt
