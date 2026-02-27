@@ -1,7 +1,7 @@
 name: vpn-checker
 on:
   repository_dispatch:
-    types: [vpn-checker]
+    #types: [vpn-checker]
   workflow_dispatch:           
 jobs:
   prepare:
