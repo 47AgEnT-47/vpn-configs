@@ -2,7 +2,12 @@ name: vpn-checker
 on:
   repository_dispatch:
     types: [vpn-checker]
-  workflow_dispatch:           
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write  # нужно для удаления старых кэшей
+
 jobs:
   prepare:
     runs-on: ubuntu-latest
@@ -10,6 +15,14 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Restore Fail Cache
+        uses: actions/cache/restore@v4
+        with:
+          path: fail_cache.txt.gz
+          key: fail-cache-${{ github.run_id }}
+          restore-keys: |
+            fail-cache-
 
       - name: Prepare Proxy List
         id: prepare
@@ -25,11 +38,13 @@ jobs:
           MATRIX=$( .github/scripts/generate-matrix.sh "${{ steps.prepare.outputs.parts }}" )
           echo "$MATRIX" >> $GITHUB_OUTPUT
 
-      - name: Upload Parts
+      - name: Upload Parts & Candidates
         uses: actions/upload-artifact@v4
         with:
           name: proxy-parts
-          path: file_*.txt
+          path: |
+            file_*.txt
+            tested_candidates.txt
           retention-days: 1
 
   check-proxies:
@@ -81,11 +96,23 @@ jobs:
     needs: check-proxies
     if: always()
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Restore Fail Cache
+        uses: actions/cache/restore@v4
+        with:
+          path: fail_cache.txt.gz
+          key: fail-cache-${{ github.run_id }}
+          restore-keys: |
+            fail-cache-
+
+      - name: Download Candidates
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: proxy-parts
 
       - name: Download all results
         uses: actions/download-artifact@v4
@@ -99,17 +126,37 @@ jobs:
           chmod +x .github/scripts/merge-results.sh
           .github/scripts/merge-results.sh
 
+      - name: Update Fail Cache
+        run: |
+          python3 .github/scripts/update-blacklist.py
+
+      - name: Save New Fail Cache
+        uses: actions/cache/save@v4
+        with:
+          path: fail_cache.txt.gz
+          key: fail-cache-${{ github.run_id }}
+
+      - name: Cleanup Old Caches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Удаляем все старые кэши с префиксом fail-cache-, кроме текущего
+          gh cache list --json id,key --jq '.[] | select(.key | startswith("fail-cache-")) | select(.key != "fail-cache-${{ github.run_id }}") | .id' | \
+          while read -r cache_id; do
+            echo "🗑 Удаляем старый кэш ID: $cache_id"
+            gh cache delete "$cache_id" || true
+          done
+
       - name: Push to Repository
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.email "github-actions[bot]@://github.com"
           
           git add configs.txt
           if ! git diff --staged --quiet; then
             git commit -m "Update proxies: $(date +'%Y-%m-%d %H:%M')"
-            git status
             git checkout . 
             git clean -fd
             git pull --rebase origin main || git pull --rebase origin master
