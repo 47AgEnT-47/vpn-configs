@@ -14,10 +14,10 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Restore Fail Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: fail_cache.txt.gz
           key: fail-cache-${{ github.run_id }}
@@ -56,10 +56,10 @@ jobs:
         part: ${{ fromJson(needs.prepare.outputs.matrix).part }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download Part
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: proxy-parts
           path: .
@@ -86,7 +86,7 @@ jobs:
           echo "Resulting lines in $OUT: $(wc -l < $OUT)"
 
       - name: Upload Result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: results-${{ matrix.part }}
           path: "vless_*.txt"
@@ -98,10 +98,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Restore Fail Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: fail_cache.txt.gz
           key: fail-cache-${{ github.run_id }}
@@ -109,13 +109,13 @@ jobs:
             fail-cache-
 
       - name: Download Candidates
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         continue-on-error: true
         with:
           name: proxy-parts
 
       - name: Download all results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         continue-on-error: true
         with:
           pattern: results-*
@@ -131,7 +131,7 @@ jobs:
           python3 .github/scripts/update-blacklist.py
 
       - name: Save New Fail Cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: fail_cache.txt.gz
           key: fail-cache-${{ github.run_id }}
