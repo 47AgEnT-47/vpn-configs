@@ -77,7 +77,7 @@ jobs:
           echo "Working on $FILE"
           
           if [ -f "$FILE" ]; then
-            ./xray-knife http -f "$FILE" -o "$OUT" -u http://gstatic.com -z xray -d 3000 -t 300 -e < /dev/null || true
+            ./xray-knife http -f "$FILE" -o "$OUT" -u http://gstatic.com/generate_204 -z xray -d 3000 -t 300 -e < /dev/null || true
           else
             echo "Error: $FILE not found!"
           fi
